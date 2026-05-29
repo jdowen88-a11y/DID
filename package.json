@@ -1,15 +1,16 @@
 {
-  "name": "elemental-dialogue-lab",
-  "version": "0.1.0",
-  "description": "A five-loop elemental reasoning sandbox with a live dashboard.",
+  "name": "element-ai-did-lab",
+  "version": "0.3.0",
+  "description": "The Element: a five-loop local reasoning system with embedded neural layer, memory, and dashboard.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "train:element": "node scripts/train_element_model.js"
   },
-  "keywords": ["multi-agent", "reasoning", "dashboard", "simulation", "elemental-loops"],
+  "keywords": ["element-ai", "multi-agent", "reasoning", "dashboard", "neural", "elemental-loops"],
   "author": "jdowen88-a11y",
   "license": "MIT",
   "engines": { "node": ">=20" }
