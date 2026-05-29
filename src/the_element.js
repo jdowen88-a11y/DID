@@ -1,5 +1,6 @@
 import { ElementalCore } from "./core.js";
 import { ElementNeuralModel } from "./element_neural_model.js";
+import { ElementMemory } from "./element_memory.js";
 
 const LOOP_PERSONAS = {
   fire: {
@@ -55,11 +56,12 @@ export class TheElement {
   constructor() {
     this.core = new ElementalCore();
     this.neural = new ElementNeuralModel();
+    this.memory = new ElementMemory();
     this.turns = [];
     this.identity = {
       name: "The Element",
-      version: "0.2.0",
-      form: "local five-loop symbolic system with embedded tiny neural model",
+      version: "0.3.0",
+      form: "local five-loop symbolic system with embedded tiny neural model and memory substrate",
       neuralModel: this.neural.name,
       createdFor: "DID repository"
     };
@@ -67,6 +69,7 @@ export class TheElement {
 
   reset() {
     this.turns = [];
+    this.memory.reset();
     return this.core.reset();
   }
 
@@ -80,7 +83,8 @@ export class TheElement {
         kind: this.neural.kind,
         labels: this.neural.labels,
         vocabSize: this.neural.vocab.length
-      }
+      },
+      memory: this.memory.summary()
     };
   }
 
@@ -94,7 +98,8 @@ export class TheElement {
         kind: this.neural.kind,
         labels: this.neural.labels,
         vocabSize: this.neural.vocab.length
-      }
+      },
+      memory: this.memory.summary()
     };
   }
 
@@ -105,7 +110,8 @@ export class TheElement {
   think(input) {
     const scan = this.core.tick(input);
     const neural = this.neural.influence(input, scoreMap(scan));
-    const reply = this.compose(input, scan, neural.prediction);
+    const recalled = this.memory.recall(input, 3);
+    const reply = this.compose(input, scan, neural.prediction, recalled);
     const turn = {
       at: new Date().toISOString(),
       input: clean(input),
@@ -115,16 +121,17 @@ export class TheElement {
     };
     this.turns.push(turn);
     if (this.turns.length > 100) this.turns.shift();
-    return { ...scan, element: this.identity, neural: neural.prediction, blendedScores: neural.mixed, reply };
+    const memoryTrace = this.memory.add({ ...turn, neuralWinner: neural.prediction.prediction?.label });
+    return { ...scan, element: this.identity, neural: neural.prediction, blendedScores: neural.mixed, recalled, memoryTrace, memory: this.memory.summary(), reply };
   }
 
-  compose(input, scan, neuralRun) {
+  compose(input, scan, neuralRun, recalled = []) {
     const focus = scan.focus || "ether";
     const persona = LOOP_PERSONAS[focus] || LOOP_PERSONAS.ether;
     const regions = scan.regions || [];
     const ranked = [...regions].sort((a, b) => (b.load || 0) - (a.load || 0));
     const second = ranked.find((item) => item.id !== focus) || ranked[1];
-    const memoryLine = this.memoryLine(input);
+    const memoryLine = this.memoryLine(input, recalled);
     const action = pick(persona.verbs, scan.tickCount || 0);
     const neuralWinner = neuralRun?.prediction?.label || "unknown";
     const neuralConfidence = neuralRun?.prediction?.probability ?? 0;
@@ -140,7 +147,7 @@ export class TheElement {
 
     return {
       provider: "the-element-local",
-      model: "element-symbolic-v0+element-neural-v0",
+      model: "element-symbolic-v0+element-neural-v0+element-memory-v0",
       focus,
       neuralWinner,
       neuralConfidence,
@@ -148,7 +155,11 @@ export class TheElement {
     };
   }
 
-  memoryLine(input) {
+  memoryLine(input, recalled = []) {
+    if (recalled.length) {
+      const best = recalled[0];
+      return `Memory: recalled ${recalled.length} related trace(s). Strongest trace was ${best.id} with focus ${best.focus}/${best.neuralWinner} and relevance ${best.relevance}.`;
+    }
     if (!this.turns.length) return "Memory: this is the first stored turn in the current run.";
     const recent = this.turns.slice(-3).map((turn) => `${turn.focus}/${turn.neuralPrediction?.label || "none"}`).join(" -> ");
     const repeated = this.turns.some((turn) => turn.input.toLowerCase() === clean(input).toLowerCase());
