@@ -1,0 +1,20 @@
+{
+  "labels": ["fire", "earth", "water", "air", "ether"],
+  "samples": [
+    { "text": "act now move fast decide urgent priority", "label": "fire" },
+    { "text": "protect the system choose the next move", "label": "fire" },
+    { "text": "risk danger action momentum commit", "label": "fire" },
+    { "text": "build the repo verify files test structure", "label": "earth" },
+    { "text": "ground proof memory stable implementation", "label": "earth" },
+    { "text": "make it concrete create the file and check it", "label": "earth" },
+    { "text": "feel trust repair connection emotion", "label": "water" },
+    { "text": "read the emotional current and keep continuity", "label": "water" },
+    { "text": "care relationship flow restore signal", "label": "water" },
+    { "text": "explain why map language theory strategy", "label": "air" },
+    { "text": "name the pattern compare alternate routes", "label": "air" },
+    { "text": "abstract question reframe design idea", "label": "air" },
+    { "text": "integrate the whole system meaning loop coherence", "label": "ether" },
+    { "text": "synthesis meta long horizon align all signals", "label": "ether" },
+    { "text": "combine every loop into one answer", "label": "ether" }
+  ]
+}
