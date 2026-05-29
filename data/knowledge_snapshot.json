@@ -1,0 +1,35 @@
+{
+  "snapshot_date": "2026-05-29",
+  "label": "internet-era knowledge horizon manifest",
+  "important_note": "This is not a copy of the internet or model weights. It is a manifest describing the intended knowledge horizon for a retrieval-connected or LLM-connected version of the agent.",
+  "horizon": {
+    "start": "early public internet and pre-web computing context",
+    "end": "2026-05-29",
+    "coverage_style": "layered domains, not raw corpus storage"
+  },
+  "domains": [
+    "web history and open protocols",
+    "software engineering",
+    "AI and machine learning",
+    "mathematics and logic",
+    "physics and cosmology",
+    "biology and neuroscience",
+    "psychology as general inspiration only, not diagnosis",
+    "history and civilizations",
+    "mythology and symbolism",
+    "design systems and visualization",
+    "ethics and safety",
+    "systems theory and cybernetics"
+  ],
+  "elemental_biases": {
+    "fire": ["priority", "action", "risk", "momentum"],
+    "earth": ["structure", "proof", "memory", "implementation"],
+    "water": ["emotion", "relationship", "repair", "continuity"],
+    "air": ["language", "strategy", "abstraction", "mapping"],
+    "ether": ["integration", "meta-reasoning", "coherence", "long horizon"]
+  },
+  "future_model_provider_slot": {
+    "enabled": false,
+    "notes": "Connect an external model provider here later. Keep provider keys outside the repo in environment variables."
+  }
+}
