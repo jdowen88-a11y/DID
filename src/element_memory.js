@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
 function now() {
   return new Date().toISOString();
 }
@@ -20,13 +23,32 @@ function overlapScore(a, b) {
 }
 
 export class ElementMemory {
-  constructor(limit = 200) {
-    this.limit = limit;
+  constructor(options = {}) {
+    this.limit = options.limit || 500;
+    this.filePath = options.filePath || process.env.ELEMENT_MEMORY_PATH || "data/element_memory.local.json";
     this.traces = [];
+    this.load();
+  }
+
+  load() {
+    if (!this.filePath || !existsSync(this.filePath)) return;
+    try {
+      const raw = JSON.parse(readFileSync(this.filePath, "utf8"));
+      this.traces = Array.isArray(raw.traces) ? raw.traces.slice(-this.limit) : [];
+    } catch {
+      this.traces = [];
+    }
+  }
+
+  save() {
+    if (!this.filePath) return;
+    mkdirSync(path.dirname(this.filePath), { recursive: true });
+    writeFileSync(this.filePath, JSON.stringify({ savedAt: now(), traces: this.traces }, null, 2));
   }
 
   reset() {
     this.traces = [];
+    this.save();
   }
 
   add(trace) {
@@ -41,6 +63,7 @@ export class ElementMemory {
     };
     this.traces.push(item);
     if (this.traces.length > this.limit) this.traces.shift();
+    this.save();
     return item;
   }
 
@@ -75,6 +98,7 @@ export class ElementMemory {
     }
     return {
       count: this.traces.length,
+      filePath: this.filePath,
       focusCounts,
       neuralCounts,
       recent: this.recent(5)
