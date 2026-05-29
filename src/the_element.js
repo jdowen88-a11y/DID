@@ -1,0 +1,144 @@
+import { ElementalCore } from "./core.js";
+
+const LOOP_PERSONAS = {
+  fire: {
+    name: "Fire",
+    stance: "action-first",
+    verbs: ["ignite", "cut", "move", "commit"],
+    line: "I am choosing the next move and reducing hesitation."
+  },
+  earth: {
+    name: "Earth",
+    stance: "structure-first",
+    verbs: ["ground", "verify", "build", "store"],
+    line: "I am turning the input into structure and checking the load-bearing facts."
+  },
+  water: {
+    name: "Water",
+    stance: "continuity-first",
+    verbs: ["read", "flow", "repair", "connect"],
+    line: "I am reading the emotional current and keeping the response connected."
+  },
+  air: {
+    name: "Air",
+    stance: "map-first",
+    verbs: ["name", "map", "reframe", "compare"],
+    line: "I am mapping the language and finding alternate routes through the question."
+  },
+  ether: {
+    name: "Ether",
+    stance: "integration-first",
+    verbs: ["merge", "align", "synthesize", "route"],
+    line: "I am combining the loop signals into one coherent answer."
+  }
+};
+
+function clean(input) {
+  return String(input || "").trim();
+}
+
+function sentence(input) {
+  const text = clean(input);
+  return text.endsWith(".") || text.endsWith("?") || text.endsWith("!") ? text : `${text}.`;
+}
+
+function pick(list, index) {
+  return list[Math.abs(index) % list.length];
+}
+
+export class TheElement {
+  constructor() {
+    this.core = new ElementalCore();
+    this.turns = [];
+    this.identity = {
+      name: "The Element",
+      version: "0.1.0",
+      form: "local five-loop symbolic reasoning system",
+      createdFor: "DID repository"
+    };
+  }
+
+  reset() {
+    this.turns = [];
+    return this.core.reset();
+  }
+
+  status() {
+    return {
+      ...this.identity,
+      ...this.core.status(),
+      turnCount: this.turns.length
+    };
+  }
+
+  scan() {
+    return this.core.scan();
+  }
+
+  setFocus(loop, reason) {
+    return this.core.setFocus(loop, reason);
+  }
+
+  think(input) {
+    const scan = this.core.tick(input);
+    const reply = this.compose(input, scan);
+    const turn = {
+      at: new Date().toISOString(),
+      input: clean(input),
+      focus: scan.focus,
+      reply
+    };
+    this.turns.push(turn);
+    if (this.turns.length > 100) this.turns.shift();
+    return { ...scan, element: this.identity, reply };
+  }
+
+  compose(input, scan) {
+    const focus = scan.focus || "ether";
+    const persona = LOOP_PERSONAS[focus] || LOOP_PERSONAS.ether;
+    const regions = scan.regions || [];
+    const ranked = [...regions].sort((a, b) => (b.load || 0) - (a.load || 0));
+    const second = ranked.find((item) => item.id !== focus) || ranked[1];
+    const memoryLine = this.memoryLine(input);
+    const action = pick(persona.verbs, scan.tickCount || 0);
+
+    const text = [
+      `${persona.name} is in focus. ${persona.line}`,
+      `Read: ${sentence(input)}`,
+      `Main operation: ${action}. Secondary signal: ${second?.id || "none"}.`,
+      memoryLine,
+      this.nextStep(focus, input)
+    ].filter(Boolean).join("\n\n");
+
+    return {
+      provider: "the-element-local",
+      model: "element-symbolic-v0",
+      focus,
+      text
+    };
+  }
+
+  memoryLine(input) {
+    if (!this.turns.length) return "Memory: this is the first stored turn in the current run.";
+    const recent = this.turns.slice(-3).map((turn) => turn.focus).join(" -> ");
+    const repeated = this.turns.some((turn) => turn.input.toLowerCase() === clean(input).toLowerCase());
+    return repeated
+      ? `Memory: this input matches an earlier turn. Recent focus path: ${recent}.`
+      : `Memory: recent focus path is ${recent}.`;
+  }
+
+  nextStep(focus, input) {
+    const text = clean(input).toLowerCase();
+    if (text.includes("code") || text.includes("repo") || text.includes("file")) {
+      return "Next step: turn the idea into a concrete file, route, test, or dashboard change.";
+    }
+    if (text.includes("why") || text.includes("explain")) {
+      return "Next step: separate the core claim, the evidence, and the unknowns.";
+    }
+    if (focus === "fire") return "Next step: choose the smallest useful action and execute it cleanly.";
+    if (focus === "earth") return "Next step: make the structure testable.";
+    if (focus === "water") return "Next step: preserve continuity while reducing noise.";
+    if (focus === "air") return "Next step: name the pattern, then test the map against reality.";
+    return "Next step: merge the strongest loop signals into one practical answer.";
+  }
+}
