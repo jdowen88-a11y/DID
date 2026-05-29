@@ -24,7 +24,7 @@ function bootShell() {
   heroText.append(
     el("p", "eyebrow", "Five element reasoning demo"),
     el("h1", "", "Element Lab"),
-    el("p", "subcopy", "One visible speaker, five internal processors, live state display.")
+    el("p", "subcopy", "One visible speaker, five internal processors, model-backed chat when configured.")
   );
   const focusPill = el("div", "status-pill", "Focus: ether");
   focusPill.id = "focusPill";
@@ -41,12 +41,12 @@ function bootShell() {
   mapCard.append(mapTitle, scan);
 
   const consoleCard = el("div", "card");
-  consoleCard.append(sectionTitle("Console", "local api"));
+  consoleCard.append(sectionTitle("Chat Console", "local api"));
   const prompt = document.createElement("textarea");
   prompt.id = "prompt";
-  prompt.placeholder = "Type a prompt for the five loops.";
+  prompt.placeholder = "Type a message for the five-loop chat layer.";
   const buttonRow = el("div", "button-row");
-  const sendBtn = el("button", "", "Run");
+  const sendBtn = el("button", "", "Chat");
   sendBtn.id = "sendBtn";
   const resetBtn = el("button", "ghost", "Reset");
   resetBtn.id = "resetBtn";
@@ -63,8 +63,8 @@ function bootShell() {
   bars.id = "bars";
   barsCard.append(bars);
   const outputCard = el("div", "card");
-  outputCard.append(sectionTitle("Output", "current loop"));
-  const spoken = el("pre", "spoken", "No run yet.");
+  outputCard.append(sectionTitle("Output", "focus plus model reply"));
+  const spoken = el("pre", "spoken", "No chat yet.");
   spoken.id = "spoken";
   outputCard.append(spoken);
   midGrid.append(barsCard, outputCard);
@@ -163,7 +163,11 @@ function render(data) {
   }
 
   renderMatrix(data.links || {});
-  if (data.spoken) els.spoken.textContent = data.spoken.text || JSON.stringify(data.spoken, null, 2);
+  if (data.reply) {
+    els.spoken.textContent = `${data.reply.text}\n\nprovider: ${data.reply.provider}\nmodel: ${data.reply.model}`;
+  } else if (data.spoken) {
+    els.spoken.textContent = data.spoken.text || JSON.stringify(data.spoken, null, 2);
+  }
 }
 
 function renderMatrix(links) {
@@ -181,9 +185,9 @@ function renderMatrix(links) {
   els.matrix.append(grid);
 }
 
-async function runTick() {
+async function runChat() {
   const input = els.prompt.value.trim();
-  const data = await api("/api/tick", { method: "POST", body: JSON.stringify({ input }) });
+  const data = await api("/api/chat", { method: "POST", body: JSON.stringify({ input }) });
   render(data);
 }
 
@@ -203,10 +207,10 @@ function makeFocusButtons() {
   }
 }
 
-els.sendBtn.addEventListener("click", runTick);
+els.sendBtn.addEventListener("click", runChat);
 els.resetBtn.addEventListener("click", reset);
 els.prompt.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) runTick();
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) runChat();
 });
 
 makeFocusButtons();
