@@ -3,14 +3,14 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ElementalCognitionEngine } from "./src/engine.js";
+import { ElementalCore } from "./src/core.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
 const port = Number(process.env.PORT || 3000);
 
-const engine = new ElementalCognitionEngine();
+const core = new ElementalCore();
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -57,26 +57,26 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     if (req.method === "GET" && url.pathname === "/api/status") {
-      return sendJson(res, 200, engine.status());
+      return sendJson(res, 200, core.status());
     }
 
     if (req.method === "GET" && url.pathname === "/api/scan") {
-      return sendJson(res, 200, engine.scan());
+      return sendJson(res, 200, core.scan());
     }
 
     if (req.method === "POST" && url.pathname === "/api/tick") {
       const body = await readJsonBody(req);
-      return sendJson(res, 200, engine.tick(body.input || ""));
+      return sendJson(res, 200, core.tick(body.input || ""));
     }
 
-    if (req.method === "POST" && url.pathname === "/api/force") {
+    if (req.method === "POST" && url.pathname === "/api/focus") {
       const body = await readJsonBody(req);
-      return sendJson(res, 200, engine.forceSpotlight(body.loop, body.reason || "manual dashboard override"));
+      return sendJson(res, 200, core.setFocus(body.loop, body.reason || "manual dashboard handoff"));
     }
 
     if (req.method === "POST" && url.pathname === "/api/reset") {
-      engine.reset();
-      return sendJson(res, 200, engine.status());
+      core.reset();
+      return sendJson(res, 200, core.status());
     }
 
     return serveStatic(req, res);
