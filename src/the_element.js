@@ -1,6 +1,7 @@
 import { ElementalCore } from "./core.js";
 import { ElementNeuralModel } from "./element_neural_model.js";
 import { ElementMemory } from "./element_memory.js";
+import { ElementalTrainer } from "./elemental_trainer.js";
 
 const LOOP_PERSONAS = {
   fire: {
@@ -57,11 +58,12 @@ export class TheElement {
     this.core = new ElementalCore();
     this.neural = new ElementNeuralModel();
     this.memory = new ElementMemory();
+    this.trainer = new ElementalTrainer();
     this.turns = [];
     this.identity = {
       name: "The Element",
-      version: "0.3.0",
-      form: "local five-loop symbolic system with embedded tiny neural model and memory substrate",
+      version: "0.4.0",
+      form: "local five-loop symbolic system with embedded neural model, memory substrate, and live elemental training loops",
       neuralModel: this.neural.name,
       createdFor: "DID repository"
     };
@@ -84,7 +86,8 @@ export class TheElement {
         labels: this.neural.labels,
         vocabSize: this.neural.vocab.length
       },
-      memory: this.memory.summary()
+      memory: this.memory.summary(),
+      training: this.trainer.status()
     };
   }
 
@@ -99,7 +102,8 @@ export class TheElement {
         labels: this.neural.labels,
         vocabSize: this.neural.vocab.length
       },
-      memory: this.memory.summary()
+      memory: this.memory.summary(),
+      training: this.trainer.status()
     };
   }
 
@@ -111,21 +115,50 @@ export class TheElement {
     const scan = this.core.tick(input);
     const neural = this.neural.influence(input, scoreMap(scan));
     const recalled = this.memory.recall(input, 3);
-    const reply = this.compose(input, scan, neural.prediction, recalled);
+
+    // Ask all five trained loops what they think — evolved consensus
+    const trainerConsensus = this.trainer.consensus(input);
+
+    const reply = this.compose(input, scan, neural.prediction, recalled, trainerConsensus);
+
     const turn = {
       at: new Date().toISOString(),
       input: clean(input),
       focus: scan.focus,
       neuralPrediction: neural.prediction.prediction,
+      trainerConsensus: trainerConsensus.consensus,
       reply
     };
+
     this.turns.push(turn);
     if (this.turns.length > 100) this.turns.shift();
+
     const memoryTrace = this.memory.add({ ...turn, neuralWinner: neural.prediction.prediction?.label });
-    return { ...scan, element: this.identity, neural: neural.prediction, blendedScores: neural.mixed, recalled, memoryTrace, memory: this.memory.summary(), reply };
+
+    // THE FEEDBACK LOOP — absorb this experience into the element that owned it
+    // Each element's weights evolve based on what IT experienced
+    const trainingResult = this.trainer.absorb({
+      input: clean(input),
+      focus: scan.focus,
+      neuralPrediction: neural.prediction.prediction
+    });
+
+    return {
+      ...scan,
+      element: this.identity,
+      neural: neural.prediction,
+      blendedScores: neural.mixed,
+      recalled,
+      memoryTrace,
+      memory: this.memory.summary(),
+      trainerConsensus,
+      trainingResult,
+      training: this.trainer.status(),
+      reply
+    };
   }
 
-  compose(input, scan, neuralRun, recalled = []) {
+  compose(input, scan, neuralRun, recalled = [], trainerConsensus = null) {
     const focus = scan.focus || "ether";
     const persona = LOOP_PERSONAS[focus] || LOOP_PERSONAS.ether;
     const regions = scan.regions || [];
@@ -135,10 +168,15 @@ export class TheElement {
     const action = pick(persona.verbs, scan.tickCount || 0);
     const neuralWinner = neuralRun?.prediction?.label || "unknown";
     const neuralConfidence = neuralRun?.prediction?.probability ?? 0;
+    const consensusLabel = trainerConsensus?.consensus || "unknown";
+    const totalExperiences = trainerConsensus?.totalExperiences ?? 0;
 
     const text = [
       `${persona.name} is in focus. ${persona.line}`,
       `Neural read: ${neuralWinner} at ${Math.round(neuralConfidence * 100)}% confidence using ${neuralRun?.model || "element-neural-v0"}.`,
+      totalExperiences > 0
+        ? `Trained consensus (${totalExperiences} experiences): ${consensusLabel}.`
+        : null,
       `Read: ${sentence(input)}`,
       `Main operation: ${action}. Secondary signal: ${second?.id || "none"}.`,
       memoryLine,
@@ -147,10 +185,12 @@ export class TheElement {
 
     return {
       provider: "the-element-local",
-      model: "element-symbolic-v0+element-neural-v0+element-memory-v0",
+      model: "element-symbolic-v0+element-neural-v0+element-memory-v0+elemental-trainer-v1",
       focus,
       neuralWinner,
       neuralConfidence,
+      consensusLabel,
+      totalExperiences,
       text
     };
   }
