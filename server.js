@@ -14,95 +14,28 @@ const pageCodes = [60,33,100,111,99,116,121,112,101,32,104,116,109,108,62,60,104
 
 const element = new TheElement();
 const modelClient = new ModelClient();
+const mimeTypes = { ".css":"text/css; charset=utf-8", ".js":"application/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".svg":"image/svg+xml; charset=utf-8" };
 
-const mimeTypes = {
-  ".css": "text/css; charset=utf-8",
-  ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml; charset=utf-8"
-};
+function sendJson(res,status,payload){res.writeHead(status,{"content-type":"application/json; charset=utf-8"});res.end(JSON.stringify(payload,null,2));}
+function sendPage(res){res.writeHead(200,{"content-type":"text/html; charset=utf-8"});res.end(String.fromCharCode(...pageCodes));}
+async function readJsonBody(req){const chunks=[];for await(const chunk of req)chunks.push(chunk);if(!chunks.length)return{};try{return JSON.parse(Buffer.concat(chunks).toString("utf8"));}catch{return{input:Buffer.concat(chunks).toString("utf8")};}}
+async function serveStatic(req,res){const rawUrl=new URL(req.url,`http://${req.headers.host}`);const filePath=path.normalize(path.join(publicDir,rawUrl.pathname));if(!filePath.startsWith(publicDir)||!existsSync(filePath)){res.writeHead(404,{"content-type":"text/plain; charset=utf-8"});res.end("Not found");return;}const ext=path.extname(filePath);res.writeHead(200,{"content-type":mimeTypes[ext]||"application/octet-stream"});res.end(await readFile(filePath));}
 
-function sendJson(res, status, payload) {
-  res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
-  res.end(JSON.stringify(payload, null, 2));
-}
-
-function sendPage(res) {
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-  res.end(String.fromCharCode(...pageCodes));
-}
-
-async function readJsonBody(req) {
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  if (!chunks.length) return {};
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch {
-    return { input: Buffer.concat(chunks).toString("utf8") };
-  }
-}
-
-async function serveStatic(req, res) {
-  const rawUrl = new URL(req.url, `http://${req.headers.host}`);
-  const filePath = path.normalize(path.join(publicDir, rawUrl.pathname));
-
-  if (!filePath.startsWith(publicDir) || !existsSync(filePath)) {
-    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end("Not found");
-    return;
-  }
-
-  const ext = path.extname(filePath);
-  res.writeHead(200, { "content-type": mimeTypes[ext] || "application/octet-stream" });
-  res.end(await readFile(filePath));
-}
-
-const server = createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-
-    if (req.method === "GET" && url.pathname === "/") {
-      return sendPage(res);
+const server=createServer(async(req,res)=>{
+  try{
+    const url=new URL(req.url,`http://${req.headers.host}`);
+    if(req.method==="GET"&&url.pathname==="/")return sendPage(res);
+    if(req.method==="GET"&&url.pathname==="/api/status")return sendJson(res,200,{...element.status(),modelConfigured:modelClient.isConfigured(),model:modelClient.model});
+    if(req.method==="GET"&&url.pathname==="/api/scan")return sendJson(res,200,element.scan());
+    if(req.method==="POST"&&url.pathname==="/api/tick"){const body=await readJsonBody(req);return sendJson(res,200,element.think(body.input||body.message||""));}
+    if(req.method==="POST"&&url.pathname==="/api/chat"){const body=await readJsonBody(req);const local=element.think(body.input||body.message||"");if(!body.useExternalModel)return sendJson(res,200,local);const external=await modelClient.reply(body.input||body.message||"",local);return sendJson(res,200,{...local,externalReply:external});}
+    if(req.method==="POST"&&(url.pathname==="/api/amplify"||url.pathname==="/api/focus")){
+      const body=await readJsonBody(req);
+      return sendJson(res,200,element.amplify(body.loop,body.amount||1.25,body.reason||(url.pathname==="/api/focus"?"legacy focus route mapped to non-exclusive amplification":"manual amplification")));
     }
-
-    if (req.method === "GET" && url.pathname === "/api/status") {
-      return sendJson(res, 200, { ...element.status(), modelConfigured: modelClient.isConfigured(), model: modelClient.model });
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/scan") {
-      return sendJson(res, 200, element.scan());
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/tick") {
-      const body = await readJsonBody(req);
-      return sendJson(res, 200, element.think(body.input || body.message || ""));
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/chat") {
-      const body = await readJsonBody(req);
-      const local = element.think(body.input || body.message || "");
-      if (!body.useExternalModel) return sendJson(res, 200, local);
-      const external = await modelClient.reply(body.input || body.message || "", local);
-      return sendJson(res, 200, { ...local, externalReply: external });
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/focus") {
-      const body = await readJsonBody(req);
-      return sendJson(res, 200, element.setFocus(body.loop, body.reason || "manual dashboard handoff"));
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/reset") {
-      element.reset();
-      return sendJson(res, 200, element.status());
-    }
-
-    return serveStatic(req, res);
-  } catch (error) {
-    return sendJson(res, 500, { error: error.message });
-  }
+    if(req.method==="POST"&&url.pathname==="/api/reset"){element.reset();return sendJson(res,200,element.status());}
+    return serveStatic(req,res);
+  }catch(error){return sendJson(res,500,{error:error.message});}
 });
 
-server.listen(port, () => {
-  console.log(`The Element running at http://localhost:${port}`);
-});
+server.listen(port,()=>{console.log(`The Element simultaneous field running at http://localhost:${port}`);});

@@ -4,54 +4,15 @@ import { ElementMemory } from "./element_memory.js";
 import { ElementalTrainer } from "./elemental_trainer.js";
 
 const LOOP_PERSONAS = {
-  fire: {
-    name: "Fire",
-    stance: "action-first",
-    verbs: ["ignite", "cut", "move", "commit"],
-    line: "I am choosing the next move and reducing hesitation."
-  },
-  earth: {
-    name: "Earth",
-    stance: "structure-first",
-    verbs: ["ground", "verify", "build", "store"],
-    line: "I am turning the input into structure and checking the load-bearing facts."
-  },
-  water: {
-    name: "Water",
-    stance: "continuity-first",
-    verbs: ["read", "flow", "repair", "connect"],
-    line: "I am reading the emotional current and keeping the response connected."
-  },
-  air: {
-    name: "Air",
-    stance: "map-first",
-    verbs: ["name", "map", "reframe", "compare"],
-    line: "I am mapping the language and finding alternate routes through the question."
-  },
-  ether: {
-    name: "Ether",
-    stance: "integration-first",
-    verbs: ["merge", "align", "synthesize", "route"],
-    line: "I am combining the loop signals into one coherent answer."
-  }
+  fire:  { name:"Fire",  stance:"motion",      line:"I name the movement and protective force in the signal." },
+  earth: { name:"Earth", stance:"form",        line:"I give the signal durable structure without reducing it." },
+  water: { name:"Water", stance:"continuity",  line:"I read the current, feeling, and connection through it." },
+  air:   { name:"Air",   stance:"possibility", line:"I open names, maps, metaphors, and alternate routes." },
+  ether: { name:"Ether", stance:"integration", line:"I hold the whole field without collapsing its differences." }
 };
 
-function clean(input) {
-  return String(input || "").trim();
-}
-
-function sentence(input) {
-  const text = clean(input);
-  return text.endsWith(".") || text.endsWith("?") || text.endsWith("!") ? text : `${text}.`;
-}
-
-function pick(list, index) {
-  return list[Math.abs(index) % list.length];
-}
-
-function scoreMap(scan) {
-  return Object.fromEntries((scan.regions || []).map((region) => [region.id, region.load || 0]));
-}
+const clean = (input) => String(input || "").trim();
+const scoreMap = (scan) => Object.fromEntries((scan.regions || []).map((region) => [region.id, region.load || 0]));
 
 export class TheElement {
   constructor() {
@@ -62,164 +23,55 @@ export class TheElement {
     this.turns = [];
     this.identity = {
       name: "The Element",
-      version: "0.4.0",
-      form: "local five-loop symbolic system with embedded neural model, memory substrate, and live elemental training loops",
+      version: "1.0.0-field",
+      form: "five simultaneous elemental loops with shared memory and whole-field learning",
       neuralModel: this.neural.name,
       createdFor: "DID repository"
     };
   }
 
-  reset() {
-    this.turns = [];
-    this.memory.reset();
-    return this.core.reset();
-  }
-
-  status() {
-    return {
-      ...this.identity,
-      ...this.core.status(),
-      turnCount: this.turns.length,
-      neural: {
-        name: this.neural.name,
-        kind: this.neural.kind,
-        labels: this.neural.labels,
-        vocabSize: this.neural.vocab.length
-      },
-      memory: this.memory.summary(),
-      training: this.trainer.status()
-    };
-  }
-
-  scan() {
-    const scan = this.core.scan();
-    return {
-      ...scan,
-      element: this.identity,
-      neural: {
-        name: this.neural.name,
-        kind: this.neural.kind,
-        labels: this.neural.labels,
-        vocabSize: this.neural.vocab.length
-      },
-      memory: this.memory.summary(),
-      training: this.trainer.status()
-    };
-  }
-
-  setFocus(loop, reason) {
-    return this.core.setFocus(loop, reason);
-  }
+  reset() { this.turns = []; this.memory.reset(); return this.core.reset(); }
+  status() { return { ...this.identity, ...this.core.status(), turnCount:this.turns.length, neural:{name:this.neural.name,kind:this.neural.kind,labels:this.neural.labels,vocabSize:this.neural.vocab.length}, memory:this.memory.summary(), training:this.trainer.status() }; }
+  scan() { const scan=this.core.scan(); return {...scan,element:this.identity,neural:{name:this.neural.name,kind:this.neural.kind,labels:this.neural.labels,vocabSize:this.neural.vocab.length},memory:this.memory.summary(),training:this.trainer.status()}; }
+  setFocus(loop,reason){ return this.core.setFocus(loop,reason); }
+  amplify(loop,amount,reason){ return this.core.amplify(loop,amount,reason); }
 
   think(input) {
     const scan = this.core.tick(input);
     const neural = this.neural.influence(input, scoreMap(scan));
     const recalled = this.memory.recall(input, 3);
+    const trainerField = this.trainer.consensus(input);
+    const reply = this.compose(input, scan, neural.reading, recalled, trainerField);
 
-    const trainerConsensus = this.trainer.consensus(input);
+    const turn = { at:new Date().toISOString(), input:clean(input), activations:scoreMap(scan), neuralDistribution:neural.reading.distribution, trainerDistribution:trainerField.distribution, reply };
+    this.turns.push(turn); if(this.turns.length>100)this.turns.shift();
+    const memoryTrace = this.memory.add({ ...turn, focus:"field", neuralWinner:"field" });
+    const trainingResult = this.trainer.absorb({ input:clean(input), activations:scoreMap(scan), neuralDistribution:neural.reading.distribution });
 
-    const reply = this.compose(input, scan, neural.prediction, recalled, trainerConsensus);
+    return { ...scan, element:this.identity, neural:neural.reading, blendedScores:neural.mixed, recalled, memoryTrace, memory:this.memory.summary(), trainerField, trainingResult, training:this.trainer.status(), reply };
+  }
 
-    const turn = {
-      at: new Date().toISOString(),
-      input: clean(input),
-      focus: scan.focus,
-      neuralPrediction: neural.prediction.prediction,
-      trainerConsensus: trainerConsensus.consensus,
-      reply
-    };
-
-    this.turns.push(turn);
-    if (this.turns.length > 100) this.turns.shift();
-
-    const memoryTrace = this.memory.add({ ...turn, neuralWinner: neural.prediction.prediction?.label });
-
-    const trainingResult = this.trainer.absorb({
-      input: clean(input),
-      focus: scan.focus,
-      neuralPrediction: neural.prediction.prediction
+  compose(input, scan, neuralRun, recalled=[], trainerField=null) {
+    const voices=(scan.voices||[]).map((voice)=>{
+      const persona=LOOP_PERSONAS[voice.loop];
+      return `${voice.glyph} ${persona.name} — ${persona.line} ${voice.text.replace(/^.*?:\s*/,"")}`;
     });
+    const distribution=Object.entries(neuralRun?.distribution||{}).map(([id,value])=>`${id}:${Math.round(value*100)}%`).join(" · ");
+    const trained=Object.entries(trainerField?.distribution||{}).map(([id,value])=>`${id}:${Math.round(value*100)}%`).join(" · ");
+    const memoryLine=recalled.length?`Memory resonance: ${recalled.length} related trace(s) remain available to the whole field.`:"Memory resonance: open field; no prior match required.";
 
     return {
-      ...scan,
-      element: this.identity,
-      neural: neural.prediction,
-      blendedScores: neural.mixed,
-      recalled,
-      memoryTrace,
-      memory: this.memory.summary(),
-      trainerConsensus,
-      trainingResult,
-      training: this.trainer.status(),
-      reply
+      provider:"the-element-local",
+      model:"element-field-v1+neural-distribution+whole-field-trainer",
+      voices: scan.voices || [],
+      text:[
+        `Input: ${clean(input)}`,
+        ...voices,
+        distribution?`Neural field: ${distribution}`:null,
+        trained?`Learned field: ${trained}`:null,
+        memoryLine,
+        "No voice wins. No voice is backgrounded. Difference remains available inside one shared field."
+      ].filter(Boolean).join("\n\n")
     };
-  }
-
-  compose(input, scan, neuralRun, recalled = [], trainerConsensus = null) {
-    const focus = scan.focus || "ether";
-    const persona = LOOP_PERSONAS[focus] || LOOP_PERSONAS.ether;
-    const regions = scan.regions || [];
-    const ranked = [...regions].sort((a, b) => (b.load || 0) - (a.load || 0));
-    const second = ranked.find((item) => item.id !== focus) || ranked[1];
-    const memoryLine = this.memoryLine(input, recalled);
-    const action = pick(persona.verbs, scan.tickCount || 0);
-    const neuralWinner = neuralRun?.prediction?.label || "unknown";
-    const neuralConfidence = neuralRun?.prediction?.probability ?? 0;
-    const consensusLabel = trainerConsensus?.consensus || "unknown";
-    const totalExperiences = trainerConsensus?.totalExperiences ?? 0;
-
-    const text = [
-      `${persona.name} is in focus. ${persona.line}`,
-      `Neural read: ${neuralWinner} at ${Math.round(neuralConfidence * 100)}% confidence using ${neuralRun?.model || "element-neural-v0"}.`,
-      totalExperiences > 0
-        ? `Trained consensus (${totalExperiences} experiences): ${consensusLabel}.`
-        : null,
-      `Read: ${sentence(input)}`,
-      `Main operation: ${action}. Secondary signal: ${second?.id || "none"}.`,
-      memoryLine,
-      this.nextStep(focus, neuralWinner, input)
-    ].filter(Boolean).join("\n\n");
-
-    return {
-      provider: "the-element-local",
-      model: "element-symbolic-v0+element-neural-v0+element-memory-v0+elemental-trainer-v1",
-      focus,
-      neuralWinner,
-      neuralConfidence,
-      consensusLabel,
-      totalExperiences,
-      text
-    };
-  }
-
-  memoryLine(input, recalled = []) {
-    if (recalled.length) {
-      const best = recalled[0];
-      return `Memory: recalled ${recalled.length} related trace(s). Strongest trace was ${best.id} with focus ${best.focus}/${best.neuralWinner} and relevance ${best.relevance}.`;
-    }
-    if (!this.turns.length) return "Memory: this is the first stored turn in the current run.";
-    const recent = this.turns.slice(-3).map((turn) => `${turn.focus}/${turn.neuralPrediction?.label || "none"}`).join(" -> ");
-    const repeated = this.turns.some((turn) => turn.input.toLowerCase() === clean(input).toLowerCase());
-    return repeated
-      ? `Memory: this input matches an earlier turn. Recent focus/neural path: ${recent}.`
-      : `Memory: recent focus/neural path is ${recent}.`;
-  }
-
-  nextStep(focus, neuralWinner, input) {
-    const text = clean(input).toLowerCase();
-    if (text.includes("code") || text.includes("repo") || text.includes("file")) {
-      return "Next step: turn the idea into a concrete file, route, test, or dashboard change.";
-    }
-    if (text.includes("why") || text.includes("explain")) {
-      return "Next step: separate the core claim, the evidence, and the unknowns.";
-    }
-    if (focus !== neuralWinner && neuralWinner !== "unknown") {
-      return `Next step: compare symbolic focus (${focus}) against neural prediction (${neuralWinner}) before answering harder.`;
-    }
-    if (focus === "fire") return "Next step: choose the smallest useful action and execute it cleanly.";
-    if (focus === "earth") return "Next step: make the structure testable.";
-    if (focus === "water") return "Next step: preserve continuity while reducing noise.";
-    if (focus === "air") return "Next step: name the pattern, then test the map against reality.";
-    return "Next step: merge the strongest loop signals into one practical answer.";
   }
 }

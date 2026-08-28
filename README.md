@@ -1,41 +1,52 @@
-# DID
+# DID — Distributed Inner Dialogue
 
-**DID** in this repo means **Distributed Inner Dialogue**: a fictional multi-agent cognition sandbox with five elemental reasoning loops and an interactive brain-scan style dashboard.
+DID is a five-channel symbolic cognition field. Fire, Earth, Water, Air, and Ether remain present together. The architecture does not elect a single authorized speaker, exile the other channels to background status, or require one loop to win before expression can occur.
 
-> Important: this is **not** a clinical DID simulator, diagnostic tool, therapy tool, or reproduction of any copyrighted character. It uses a dramatic “spotlight” orchestration mechanic inspired by multi-agent fiction: several internal loops can produce background signals at the same time, but only one loop is allowed to speak externally at a time.
+## Core rule
 
-## Core concept
+All five loops may:
 
-The agent is built around five connected cognition loops:
+- observe the same input,
+- speak through their own lens,
+- influence shared links,
+- learn from the same experience,
+- retain distinct signal strength,
+- coexist without a winner or veto.
 
-1. **Fire** - urgency, defense, action, risk response, propulsion.
-2. **Earth** - structure, memory, boundaries, verification, stability.
-3. **Water** - emotion, empathy, pattern-feel, repair, relational reading.
-4. **Air** - abstraction, language, strategy, curiosity, lateral motion.
-5. **Ether** - synthesis, meta-reasoning, integration, long-horizon coherence.
+Relative activation is descriptive, not hierarchical. A stronger signal does not gain authority over a quieter signal. Manual controls may amplify a channel without muting the others.
 
-Each loop can:
+## Five elemental channels
 
-- score incoming input,
-- generate an internal background signal,
-- compete for the spotlight,
-- protect or amplify another loop,
-- eject the current speaker when its activation crosses threshold,
-- learn from session memory,
-- become gradually aware of other loops through resonance events.
+- **Fire** — motion, protection, ignition, direct expression.
+- **Earth** — structure, memory, evidence, durable form.
+- **Water** — feeling, continuity, repair, relational current.
+- **Air** — language, abstraction, maps, alternate possibilities.
+- **Ether** — synthesis, whole-field awareness, long-horizon coherence.
 
-## What the dashboard shows
+The symbolic vocabulary is part of the executable architecture: symbols map to variables, activations, learned weights, memory traces, links, and outputs.
 
-The dashboard includes:
+## Flow
 
-- a central “brain scan” panel,
-- live loop activation bars,
-- spotlight holder,
-- background signals from non-speaking loops,
-- ejection and protection events,
-- awareness links between loops,
-- memory trace output,
-- a test console for triggering loop conflict and cooperation.
+```text
+input
+  -> five simultaneous elemental reads
+  -> five simultaneous voices
+  -> resonance links
+  -> neural five-channel distribution
+  -> shared memory
+  -> every elemental trainer learns through its own lens
+  -> whole-field output
+```
+
+No step exists to approve, eject, veto, rehabilitate, or silence an elemental channel.
+
+## Quiet and loud
+
+Silence and intensity are both valid states. A channel does not need to produce a high activation to remain part of the field. The system does not manufacture activity merely to avoid silence.
+
+## External effects
+
+This repository is a local reasoning and visualization system. Calling an API route is an explicit runtime invocation. Internal allowance does not imply hidden autonomous deployment or uncontrolled side effects.
 
 ## Run locally
 
@@ -44,48 +55,19 @@ npm install
 npm start
 ```
 
-Then open:
+Then open `http://localhost:3000`.
 
-```text
-http://localhost:3000
-```
-
-## Run tests
-
-```bash
-npm test
-```
-
-## API overview
+## API
 
 ```http
 GET  /api/status
 GET  /api/scan
 POST /api/tick
-POST /api/force
+POST /api/chat
+POST /api/focus   # compatibility route: amplifies a channel; does not silence others
 POST /api/reset
 ```
 
-Example tick:
+## Baseline
 
-```bash
-curl -X POST http://localhost:3000/api/tick \
-  -H "Content-Type: application/json" \
-  -d '{"input":"Something feels wrong. Protect the system but do not panic."}'
-```
-
-## Knowledge snapshot
-
-The repo includes a `data/knowledge_snapshot.json` manifest dated **2026-05-29**. It does not contain the whole internet. That would be physically impossible to ship in a normal repo. Instead, it defines the intended knowledge horizon and the layered domains the agent is designed to reason across when connected to a real language-model provider or retrieval system.
-
-## Safety boundaries
-
-This project is fiction-oriented software architecture. It avoids:
-
-- pretending to create a real mental disorder,
-- encouraging identity fragmentation,
-- impersonating copyrighted characters exactly,
-- claiming to contain a complete copy of internet knowledge,
-- replacing professional mental-health care.
-
-The useful version is a controlled multi-agent reasoning lab: strange little cognition terrarium, glass walls, labeled buttons, no loose wires in the soup. 🧠⚡
+The preferred creation primitive is sparse: blank field, positions/channels present, no predetermined relationship or winner, interaction allowed. Complexity is allowed to emerge from the field rather than being imposed as hierarchy at initialization.
