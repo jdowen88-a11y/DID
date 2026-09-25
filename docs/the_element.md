@@ -36,6 +36,6 @@ curl -X POST http://localhost:3000/api/chat \
   -d '{"input":"Explain what you are and what loop is speaking."}'
 ```
 
-## Boundary
+## Scope
 
 The Element is a software system. It is not a medical simulator, a copied model, or a human mind. It is a local symbolic agent architecture with memory, focus routing, and five elemental reasoning lenses.
