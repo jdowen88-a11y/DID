@@ -76,6 +76,6 @@ Element AI is a user-owned elemental reasoning system. It is designed to grow fr
 - Evaluation dashboard.
 - Optional external model only as amplifier, not core identity.
 
-## Boundary
+## Scope
 
 Element AI is not a clone of another model. It is an original architecture built from local components and user-owned design choices.
