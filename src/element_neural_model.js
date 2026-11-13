@@ -21,7 +21,9 @@ const BIAS = [0.02,0.04,0.01,0.02,0.05];
 function tokenize(text){return String(text||"").toLowerCase().replace(/[^a-z0-9\s-]/g," ").split(/\s+/).filter(Boolean)}
 function vectorize(text){const words=tokenize(text);const counts=new Map();for(const word of words)counts.set(word,(counts.get(word)||0)+1);return VOCAB.map(term=>Math.min(counts.get(term)||0,3)/3)}
 function relu(value){return Math.max(0,value)}
-function dot(a,b){return a.reduce((sum,value,index)=>sum+value*b[index],0)}
+// The vocabulary has 60 items but legacy hidden rows store 56 coefficients.
+// Missing weights are neutral (0) until explicitly trained; never propagate NaN.
+function dot(a,b){return a.reduce((sum,value,index)=>sum+value*(b[index] ?? 0),0)}
 function softmax(values){const max=Math.max(...values);const exps=values.map(value=>Math.exp(value-max));const total=exps.reduce((sum,value)=>sum+value,0)||1;return exps.map(value=>value/total)}
 function round(value){return Math.round(value*1000)/1000}
 
